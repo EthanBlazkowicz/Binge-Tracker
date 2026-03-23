@@ -362,14 +362,17 @@ HTML_TEMPLATE = """
         }
         .form-banner button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255,255,255,0.2); }
 
-        /* Tooltip */
-        .ep-box::after {
-            content: attr(data-tooltip);
-            position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%);
-            background: rgba(255,255,255,0.9); color: #000; padding: 10px 15px; border-radius: 12px; 
-            white-space: nowrap; font-size: 13px; z-index: 100; opacity: 0; pointer-events: none; transition: all 0.2s; font-weight: 600;
+        /* Global Tooltip */
+        #global-tooltip {
+            position: fixed;
+            background: rgba(255,255,255,0.95); color: #000; padding: 10px 15px; border-radius: 12px;
+            white-space: nowrap; font-size: 13px; font-weight: 600;
+            z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transform: translateX(-50%) translateY(10px);
+            left: 0; top: 0;
         }
-        .ep-box:hover::after { opacity: 1; transform: translateX(-50%) translateY(-5px); }
+        #global-tooltip.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         /* Settings Icon */
         .settings-btn { position: fixed; top: 30px; right: 30px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; color: #fff; }
@@ -380,7 +383,24 @@ HTML_TEMPLATE = """
     </style>
     <script>
         function setBg(bgStyle) { document.body.style.background = bgStyle; localStorage.setItem('bingeBg', bgStyle); }
-        window.onload = () => { const savedBg = localStorage.getItem('bingeBg'); if (savedBg) document.body.style.background = savedBg; }
+        window.onload = () => { 
+            const savedBg = localStorage.getItem('bingeBg'); 
+            if (savedBg) document.body.style.background = savedBg; 
+
+            const tooltip = document.getElementById('global-tooltip');
+            document.querySelectorAll('.ep-box').forEach(box => {
+                box.addEventListener('mouseenter', (e) => {
+                    const rect = box.getBoundingClientRect();
+                    tooltip.textContent = box.getAttribute('data-tooltip');
+                    tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+                    tooltip.style.top = (rect.top - 10) + 'px';
+                    tooltip.classList.add('show');
+                });
+                box.addEventListener('mouseleave', () => {
+                    tooltip.classList.remove('show');
+                });
+            });
+        }
         function toggleMenu() { const menu = document.getElementById('bgMenu'); menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex'; }
 
         function toggleEp(epId, element) {
@@ -469,6 +489,7 @@ HTML_TEMPLATE = """
     </script>
 </head>
 <body>
+    <div id="global-tooltip"></div>
 
     <div class="settings-btn" onclick="toggleMenu()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
