@@ -323,8 +323,9 @@ HTML_TEMPLATE = """
         .daily-label { font-size: 14px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
 
         .show-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; margin-top: 20px; }
-        .season-row { display: flex; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; }
-        .season-label { font-weight: 600; width: 100px; color: rgba(255,255,255,0.5); font-size: 15px; }
+        .season-row { display: flex; align-items: flex-start; margin-bottom: 12px; }
+        .season-label { font-weight: 600; width: 100px; color: rgba(255,255,255,0.5); font-size: 15px; flex-shrink: 0; padding-top: 10px; }
+        .ep-wrapper { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; flex: 1; min-width: 0; }
 
         /* Episode Boxes */
         .ep-box { 
@@ -533,19 +534,21 @@ HTML_TEMPLATE = """
                         {% for season_num, eps in seasons.items() %}
                         <div class="season-row">
                             <div class="season-label">Season {{ season_num }}</div>
-                            {% for ep in eps %}
-                                {% if target.stats.end_ep_id and ep.id > target.stats.end_ep_id %}
-                                    {% set is_after_end.value = true %}
-                                {% else %}
-                                    {% set is_after_end.value = false %}
-                                {% endif %}
-                                <div class="ep-box {% if ep.watched %}watched{% endif %} {% if target.stats.end_ep_id == ep.id %}end-ep{% endif %} {% if is_after_end.value %}dimmed{% endif %}" 
-                                     onclick="toggleEp({{ ep.id }}, this)"
-                                     oncontextmenu="setEndEp(event, {{ ep.id }})"
-                                     data-tooltip="Ep {{ ep.episode }}: {{ ep.title }} ({{ ep.runtime_minutes }}m)">
-                                    {{ ep.episode }}
-                                </div>
-                            {% endfor %}
+                            <div class="ep-wrapper">
+                                {% for ep in eps %}
+                                    {% if target.stats.end_ep_id and ep.id > target.stats.end_ep_id %}
+                                        {% set is_after_end.value = true %}
+                                    {% else %}
+                                        {% set is_after_end.value = false %}
+                                    {% endif %}
+                                    <div class="ep-box {% if ep.watched %}watched{% endif %} {% if target.stats.end_ep_id == ep.id %}end-ep{% endif %} {% if is_after_end.value %}dimmed{% endif %}" 
+                                         onclick="toggleEp({{ ep.id }}, this)"
+                                         oncontextmenu="setEndEp(event, {{ ep.id }})"
+                                         data-tooltip="Ep {{ ep.episode }}: {{ ep.title }} ({{ ep.runtime_minutes }}m)">
+                                        {{ ep.episode }}
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
