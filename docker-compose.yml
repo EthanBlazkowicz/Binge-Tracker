@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  binge-tracker:
+    build: .
+    container_name: binge-tracker
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+    restart: always
