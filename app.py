@@ -300,7 +300,7 @@ HTML_TEMPLATE = """
 
         .target-header { display: flex; gap: 30px; height: 400px; }
         .target-poster { height: 100%; width: 280px; border-radius: 16px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-shrink: 0; }
-        .target-info { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; padding-top: 10px; }
+        .target-info { flex: 1; display: flex; flex-direction: column; min-width: 0; padding-top: 10px; }
         .target-title-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-right: 5px; }
         .target-info h2 { margin: 0; font-size: 32px; font-weight: 700; }
         
@@ -331,9 +331,9 @@ HTML_TEMPLATE = """
             width: 38px; height: 38px; background: rgba(255,255,255,0.08); 
             display: flex; align-items: center; justify-content: center; border-radius: 10px; 
             cursor: pointer; font-size: 15px; font-weight: 600; 
-            border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; user-select: none;
+            border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; user-select: none; position: relative;
         }
-        .ep-box:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        .ep-box:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); z-index: 999; }
         .ep-box.watched { background: var(--primary-green); border-color: transparent; color: #000; }
         .ep-box.dimmed { opacity: 0.15; }
         .ep-box.end-ep { border: 2px solid var(--accent-red); background: rgba(255, 69, 58, 0.1); }
@@ -414,9 +414,44 @@ HTML_TEMPLATE = """
             }
         }
         function moveTarget(targetId, direction) {
-            fetch('/move/' + targetId + '/' + direction, { method: 'POST' })
-            .then(res => res.json())
-            .then(data => { if(data.success) window.location.reload(); });
+            const currentCard = document.getElementById('card-' + targetId);
+            if (!currentCard) return;
+            
+            const sibling = direction === 'up' ? currentCard.previousElementSibling : currentCard.nextElementSibling;
+            
+            // Proceed with animation only if the sibling is another target card
+            if (sibling && sibling.classList.contains('target-card')) {
+                const currentRect = currentCard.getBoundingClientRect();
+                const siblingRect = sibling.getBoundingClientRect();
+                const dy = siblingRect.top - currentRect.top;
+
+                // Prepare for animation
+                currentCard.style.transition = 'transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out';
+                currentCard.style.zIndex = '100';
+                currentCard.style.position = 'relative';
+                
+                sibling.style.transition = 'transform 0.4s ease-in-out';
+                sibling.style.position = 'relative';
+
+                // Trigger animation
+                requestAnimationFrame(() => {
+                    currentCard.style.transform = `translateY(${dy}px) scale(1.02)`;
+                    currentCard.style.boxShadow = '0 25px 50px rgba(0,0,0,0.6)';
+                    sibling.style.transform = `translateY(${-dy}px)`;
+                });
+
+                // Wait for animation, then backend call
+                setTimeout(() => {
+                    fetch('/move/' + targetId + '/' + direction, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => { if(data.success) window.location.reload(); });
+                }, 400);
+            } else {
+                // Fallback if no valid sibling
+                fetch('/move/' + targetId + '/' + direction, { method: 'POST' })
+                .then(res => res.json())
+                .then(data => { if(data.success) window.location.reload(); });
+            }
         }
         function updateStats(targetId, stats) {
             const bar = document.getElementById('bar-' + targetId);
