@@ -358,27 +358,27 @@ HTML_TEMPLATE = """
 <head>
     <title>Binge Tracker</title>
     <style>
-        /* Neutral Glass Theme */
+        /* Refined Glass Theme */
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.15);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --glass-blur: blur(25px);
-            --primary-blue: #0A84FF;
-            --primary-green: #30D158;
-            --accent-red: #FF453A;
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-blur: blur(40px);
+            --primary-blue: rgba(10, 132, 255, 0.85);
+            --primary-green: rgba(48, 209, 88, 0.85);
+            --accent-red: rgba(255, 69, 58, 0.85);
             --text-white: #FFFFFF;
             --banner-width: 80vw;
         }
 
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
             margin: 0; padding: 60px 0; color: var(--text-white);
             background: #000;
             display: flex; flex-direction: column; align-items: center;
             min-height: 100vh;
         }
 
-        .banner-container { width: var(--banner-width); margin-bottom: 40px; box-sizing: border-box; }
+        .banner-container { width: var(--banner-width); margin-bottom: 48px; box-sizing: border-box; }
 
         /* Glass Panel Styling */
         .glass-panel {
@@ -386,114 +386,307 @@ HTML_TEMPLATE = """
             backdrop-filter: var(--glass-blur);
             -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border-radius: 28px;
+            box-shadow:
+                0 8px 32px 0 rgba(0, 0, 0, 0.37),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
         /* Title Banner */
-        .title-banner { padding: 40px; text-align: center; }
-        .title-banner h1 { margin: 0; font-size: 48px; font-weight: 800; letter-spacing: -1.5px; }
+        .title-banner { padding: 48px; text-align: center; }
+        .title-banner h1 { margin: 0; font-size: 56px; font-weight: 900; letter-spacing: -2px; }
 
         /* Target Cards */
-        .target-card { 
-            width: var(--banner-width); padding: 30px; box-sizing: border-box; 
-            margin-bottom: 40px; display: flex; flex-direction: column;
+        .target-card {
+            width: var(--banner-width); padding: 36px; box-sizing: border-box;
+            margin-bottom: 48px; display: flex; flex-direction: column;
         }
 
-        .target-header { display: flex; gap: 30px; height: 400px; }
-        .target-poster { height: 100%; width: 280px; border-radius: 16px; object-fit: cover; box-shadow: 0 10px 30px rgba(0,0,0,0.5); flex-shrink: 0; }
+        .target-header { display: flex; gap: 36px; height: 400px; }
+        .target-poster {
+            height: 100%; width: 280px; border-radius: 20px; object-fit: cover;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.4); flex-shrink: 0;
+            position: relative; overflow: hidden;
+        }
+        .target-poster::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+        }
         .target-info { flex: 1; display: flex; flex-direction: column; min-width: 0; padding-top: 10px; }
-        .target-title-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-right: 5px; }
-        .target-info h2 { margin: 0; font-size: 32px; font-weight: 700; }
+        .target-title-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-right: 5px; }
+        .target-info h2 { margin: 0; font-size: 28px; font-weight: 700; }
 
-        .action-group { display: flex; gap: 10px; align-items: center; }
-        .btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px 15px; cursor: pointer; font-weight: 600; font-size: 14px; line-height: 24px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
-        .btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
-        .btn.delete-btn { background: rgba(255, 69, 58, 0.2); border-color: rgba(255, 69, 58, 0.4); }
-        .btn.delete-btn:hover { background: rgba(255, 69, 58, 0.5); }
-
-        /* Stats Boxes - same style as buttons */
-        .stats-inline-panel { display: flex; gap: 10px; }
-        .stats-box {
-            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 10px; padding: 10px 15px;
+        .action-group { display: flex; gap: 12px; align-items: center; }
+        .btn {
+            background: rgba(255,255,255,0.06); color: white;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; padding: 0 16px;
+            cursor: pointer; font-weight: 600; font-size: 13px; line-height: 40px;
+            height: 40px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex; align-items: center; justify-content: center;
-            font-size: 14px; font-weight: 600; color: white; line-height: 24px;
         }
-        .stats-box .num { font-weight: 700; margin-right: 4px; }
-        .stats-box .label { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 500; }
+        .btn:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn.delete-btn {
+            background: rgba(255, 69, 58, 0.1);
+            border-color: rgba(255, 69, 58, 0.2);
+            color: rgba(255, 200, 195, 1);
+        }
+        .btn.delete-btn:hover {
+            background: rgba(255, 69, 58, 0.25);
+            border-color: rgba(255, 69, 58, 0.4);
+        }
 
-        .show-list-container { flex: 1; overflow-y: auto; padding-right: 20px; }
+        /* Stats Boxes - refined style */
+        .stats-inline-panel { display: flex; gap: 12px; }
+        .stats-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px; padding: 0 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 600; color: white; line-height: 40px;
+            height: 38px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .stats-box:hover { background: rgba(255, 255, 255, 0.08); }
+        .stats-box .num { font-weight: 700; margin-right: 5px; font-size: 13px; }
+        .stats-box .label { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 500; letter-spacing: 0.3px; text-transform: uppercase; }
+
+        .show-list-container { flex: 1; overflow-y: auto; padding-right: 24px; }
+        .show-list-container::-webkit-scrollbar { width: 6px; }
+        .show-list-container::-webkit-scrollbar-track { background: transparent; }
+        .show-list-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .show-list-container::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
         /* Stats Blocks (progress area) */
-        .stats-right-panel { display: flex; gap: 15px; flex-shrink: 0; }
+        .stats-right-panel { display: flex; gap: 16px; flex-shrink: 0; }
         .glass-box {
-            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 20px; padding: 25px; min-width: 140px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 24px; padding: 28px;
+            min-width: 140px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        .glass-box:hover { background: rgba(255, 255, 255, 0.08); }
         .daily-num { font-size: 42px; font-weight: 800; line-height: 1; margin-bottom: 8px; }
-        .daily-label { font-size: 14px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
+        .daily-label { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; }
 
-        .show-title { font-size: 18px; font-weight: 700; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; margin-top: 20px; }
-        .season-row { display: flex; align-items: flex-start; margin-bottom: 12px; }
-        .season-label { font-weight: 600; width: 100px; color: rgba(255,255,255,0.5); font-size: 15px; flex-shrink: 0; padding-top: 10px; }
-        .ep-wrapper { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; flex: 1; min-width: 0; }
-
-        /* Episode Boxes */
-        .ep-box { 
-            width: 38px; height: 38px; background: rgba(255,255,255,0.08); 
-            display: flex; align-items: center; justify-content: center; border-radius: 10px; 
-            cursor: pointer; font-size: 15px; font-weight: 600; 
-            border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; user-select: none; position: relative;
+        .show-title {
+            font-size: 16px; font-weight: 600;
+            margin-bottom: 14px; padding-bottom: 8px; margin-top: 24px;
+            color: rgba(255,255,255,0.9);
+            letter-spacing: 0.3px;
         }
-        .ep-box:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); z-index: 999; }
-        .ep-box.watched { background: var(--primary-green); border-color: transparent; color: #000; }
-        .ep-box.dimmed { opacity: 0.15; }
-        .ep-box.end-ep { border: 2px solid var(--accent-red); background: rgba(255, 69, 58, 0.1); }
-
-        /* Progress Area */
-        .progress-wrapper { margin-top: 30px; }
-        .progress-container { background: rgba(255,255,255,0.05); height: 32px; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); position: relative; }
-        .progress-bar { background: #FFFFFF; height: 100%; transition: width 0.8s cubic-bezier(0.23, 1, 0.32, 1); }
-        .progress-text-overlay { position: absolute; width: 100%; text-align: center; top: 0; left: 0; line-height: 32px; font-size: 14px; font-weight: 700; mix-blend-mode: difference; }
-        .stats-text { margin-top: 12px; font-size: 15px; color: rgba(255,255,255,0.5); text-align: center; font-weight: 500; }
-
-        /* Form Area */
-        .form-banner { width: var(--banner-width); padding: 40px; box-sizing: border-box; margin-top: 40px; }
-        .form-banner h2 { margin-top: 0; margin-bottom: 25px; font-size: 28px; font-weight: 700; }
-        .form-banner label { color: rgba(255,255,255,0.5); font-weight: 600; font-size: 14px; margin-bottom: 10px; display: block; }
-        .form-banner input { 
-            padding: 16px 20px; margin-bottom: 20px; width: 100%; 
-            box-sizing: border-box; border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 14px; background: rgba(255,255,255,0.05); 
-            color: #fff; font-size: 17px; outline: none;
+        .season-row { display: flex; align-items: flex-start; margin-bottom: 10px; }
+        .season-label {
+            font-weight: 500; width: 100px;
+            color: rgba(255,255,255,0.4); font-size: 13px;
+            flex-shrink: 0; padding-top: 8px;
+            letter-spacing: 0.3px;
         }
-        .form-banner button { 
-            padding: 18px; background: #fff; color: #000; border: none; 
-            border-radius: 14px; cursor: pointer; font-size: 18px; font-weight: 700; 
-            width: 100%; transition: all 0.2s;
-        }
-        .form-banner button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255,255,255,0.2); }
+        .ep-wrapper { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex: 1; min-width: 0; }
 
-        /* Global Tooltip */
+        /* Episode Boxes - refined */
+        .ep-box {
+            width: 34px; height: 34px;
+            background: rgba(255,255,255,0.04);
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            cursor: pointer; font-size: 13px; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.04);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none; position: relative;
+        }
+        .ep-box:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.1);
+            transform: scale(1.08);
+            z-index: 999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .ep-box.watched {
+            background: var(--primary-green);
+            border-color: transparent;
+            color: #000;
+            font-weight: 700;
+        }
+        .ep-box.dimmed {
+            opacity: 0.12;
+            filter: blur(0.5px);
+        }
+        .ep-box.end-ep {
+            border: 1.5px solid var(--accent-red);
+            background: rgba(255, 69, 58, 0.08);
+            box-shadow: 0 0 0 1px rgba(255, 69, 58, 0.1);
+        }
+
+        /* Progress Area - refined */
+        .progress-wrapper { margin-top: 32px; }
+        .progress-container {
+            background: rgba(255,255,255,0.03);
+            height: 36px; border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.06);
+            position: relative;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,1) 100%);
+            height: 100%;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .progress-bar::after {
+            content: ''; position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        .progress-text-overlay {
+            position: absolute; width: 100%; text-align: center;
+            top: 0; left: 0; line-height: 36px;
+            font-size: 14px; font-weight: 700;
+            mix-blend-mode: difference;
+            z-index: 1;
+        }
+        .stats-text {
+            margin-top: 14px; font-size: 14px;
+            color: rgba(255,255,255,0.45); text-align: center;
+            font-weight: 500; letter-spacing: 0.2px;
+        }
+
+        /* Form Area - refined */
+        .form-banner {
+            width: var(--banner-width); padding: 40px; box-sizing: border-box;
+            margin-top: 48px;
+        }
+        .form-banner h2 {
+            margin-top: 0; margin-bottom: 28px;
+            font-size: 24px; font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+        .form-banner label {
+            color: rgba(255,255,255,0.5);
+            font-weight: 500; font-size: 13px;
+            margin-bottom: 10px; display: block;
+            letter-spacing: 0.3px; text-transform: uppercase;
+        }
+        .form-banner input {
+            padding: 16px 20px; margin-bottom: 20px; width: 100%;
+            box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.04);
+            color: #fff; font-size: 16px;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .form-banner input:focus {
+            border-color: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.06);
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.03);
+        }
+        .form-banner button {
+            padding: 18px 32px;
+            background: #fff; color: #000;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 16px; font-weight: 700;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.3px;
+        }
+        .form-banner button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(255,255,255,0.25);
+        }
+
+        /* Global Tooltip - refined */
         #global-tooltip {
             position: fixed;
-            background: rgba(255,255,255,0.95); color: #000; padding: 10px 15px; border-radius: 12px;
-            white-space: nowrap; font-size: 13px; font-weight: 600;
-            z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            background: rgba(30, 30, 30, 0.98);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 12px;
+            white-space: nowrap;
+            font-size: 13px; font-weight: 500;
+            z-index: 99999;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
             transform: translateX(-50%) translateY(10px);
             left: 0; top: 0;
         }
-        #global-tooltip.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #global-tooltip.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
 
-        /* Settings Icon */
-        .settings-btn { position: fixed; top: 30px; right: 30px; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; color: #fff; }
+        /* Settings Icon - refined */
+        .settings-btn {
+            position: fixed; top: 36px; right: 36px;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            width: 48px; height: 48px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 1000; color: #fff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .settings-btn:hover {
+            background: rgba(255,255,255,0.18);
+            transform: rotate(90deg);
+        }
 
-        .bg-menu { position: fixed; top: 90px; right: 30px; background: rgba(255,255,255,0.15); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.2); border-radius: 18px; padding: 15px; display: none; flex-direction: column; gap: 10px; z-index: 1000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .bg-option { padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; color: #fff; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); text-align: center; }
-        .bg-option:hover { background: rgba(255,255,255,0.2); }
+        /* Background Menu - refined */
+        .bg-menu {
+            position: fixed; top: 96px; right: 36px;
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 18px;
+            padding: 12px;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1000;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+            animation: menuSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes menuSlide {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .bg-option {
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 13px; font-weight: 500;
+            color: rgba(255,255,255,0.85);
+            background: transparent;
+            border: none;
+            text-align: center;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bg-option:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            padding-left: 24px;
+        }
     </style>
     <script>
         function setBg(bgStyle) { document.body.style.background = bgStyle; localStorage.setItem('bingeBg', bgStyle); }
