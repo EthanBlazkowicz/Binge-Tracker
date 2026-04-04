@@ -6,6 +6,7 @@ A high-performance, single-page web application for tracking binge-watching prog
 - **Group Tracking**: Import multiple IMDB titles (e.g., a series and its spin-offs) into a single "Binge Target".
 - **Dynamic Progress**: Interactive episode grid with hover tooltips for runtime and titles.
 - **Goal Calculation**: Set a "Target End Date" and an "Endpoint Episode" to calculate exactly how many minutes per day you need to watch.
+- **Compact UI**: Action bar with inline stats (mins/day, deadline) for efficient screen space usage.
 - **Glassmorphism UI**: Neutral, translucent interface optimized for high-resolution (4K) monitors.
 - **Customization**: Built-in background selector to match your aesthetic.
 - **Persistent Storage**: SQLite database integration with volume support for Docker.

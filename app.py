@@ -405,18 +405,29 @@ HTML_TEMPLATE = """
         .target-info { flex: 1; display: flex; flex-direction: column; min-width: 0; padding-top: 10px; }
         .target-title-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-right: 5px; }
         .target-info h2 { margin: 0; font-size: 32px; font-weight: 700; }
-        
-        .action-group { display: flex; gap: 10px; }
-        .btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px 15px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+
+        .action-group { display: flex; gap: 10px; align-items: center; }
+        .btn { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px 15px; cursor: pointer; font-weight: 600; font-size: 14px; line-height: 24px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
         .btn:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
         .btn.delete-btn { background: rgba(255, 69, 58, 0.2); border-color: rgba(255, 69, 58, 0.4); }
         .btn.delete-btn:hover { background: rgba(255, 69, 58, 0.5); }
 
+        /* Stats Boxes - same style as buttons */
+        .stats-inline-panel { display: flex; gap: 10px; }
+        .stats-box {
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px; padding: 10px 15px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 600; color: white; line-height: 24px;
+        }
+        .stats-box .num { font-weight: 700; margin-right: 4px; }
+        .stats-box .label { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 500; }
+
         .show-list-container { flex: 1; overflow-y: auto; padding-right: 20px; }
 
-        /* Stats Blocks */
+        /* Stats Blocks (progress area) */
         .stats-right-panel { display: flex; gap: 15px; flex-shrink: 0; }
-        .glass-box { 
+        .glass-box {
             background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.15);
             border-radius: 20px; padding: 25px; min-width: 140px;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -625,8 +636,8 @@ HTML_TEMPLATE = """
             if(overlay) overlay.innerText = stats.progress_percent + '%';
             if(txt) txt.innerText = stats.text;
             if(daily) {
-                if (stats.daily_mins != null) daily.innerHTML = '<div class="daily-num">' + stats.daily_mins + '</div><div class="daily-label">mins/day</div>';
-                else daily.innerHTML = '<div class="daily-label">No Goal Date</div>';
+                if (stats.daily_mins != null) daily.innerHTML = '<span class="num">' + stats.daily_mins + '</span><span class="label">min/day</span>';
+                else daily.innerHTML = '<span class="label">No Goal</span>';
             }
         }
         function updateEndEpisode(targetId, newEndEpId, showTitle, stats) {
@@ -700,10 +711,26 @@ HTML_TEMPLATE = """
                         <button class="btn" onclick="moveTarget({{ target.id }}, 'up')" title="Move Up">▲</button>
                         <button class="btn" onclick="moveTarget({{ target.id }}, 'down')" title="Move Down">▼</button>
                         <button class="btn delete-btn" onclick="deleteTarget({{ target.id }})" title="Delete Target">Delete</button>
+
+                        <div class="stats-inline-panel">
+                            <div class="stats-box" id="daily-{{ target.id }}">
+                                {% if target.stats.daily_mins != null %}
+                                    <span class="num">{{ target.stats.daily_mins }}</span><span class="label">min/day</span>
+                                {% else %}
+                                    <span class="label">No Goal</span>
+                                {% endif %}
+                            </div>
+
+                            {% if target.end_date %}
+                            <div class="stats-box" style="background: rgba(255,255,255,0.05);">
+                                <span class="num">{{ target.end_date[5:] }}</span><span class="label" style="color: var(--primary-blue);">deadline</span>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
                 <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.4); font-size: 14px;">Right-click an episode to set binge end point.</p>
-                
+
                 <div class="show-list-container">
                     {% for show_title, seasons in target.shows.items() %}
                     <div class="show-section">
@@ -734,27 +761,8 @@ HTML_TEMPLATE = """
                     {% endfor %}
                 </div>
             </div>
-            
-            <div class="stats-right-panel">
-                <div class="glass-box" id="daily-{{ target.id }}">
-                    {% if target.stats.daily_mins != null %}
-                        <div class="daily-num">{{ target.stats.daily_mins }}</div>
-                        <div class="daily-label">mins/day</div>
-                    {% else %}
-                        <div class="daily-label">No Goal Date</div>
-                    {% endif %}
-                </div>
-                
-                {% if target.end_date %}
-                <div class="glass-box" style="background: rgba(255,255,255,0.05);">
-                    <div class="daily-num" style="font-size: 32px;">{{ target.end_date[5:] }}</div>
-                    <div class="daily-label">{{ target.end_date[:4] }}</div>
-                    <div class="daily-label" style="margin-top: 8px; color: var(--primary-blue);">Deadline</div>
-                </div>
-                {% endif %}
-            </div>
         </div>
-        
+
         <div class="progress-wrapper">
             <div class="progress-container">
                 <div class="progress-bar" id="bar-{{ target.id }}" style="width: {{ target.stats.progress_percent }}%;"></div>
