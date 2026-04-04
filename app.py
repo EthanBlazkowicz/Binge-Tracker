@@ -48,9 +48,13 @@ def init_db():
                 episode INTEGER,
                 title TEXT,
                 runtime_minutes INTEGER,
-                watched INTEGER DEFAULT 0
+                watched INTEGER DEFAULT 0,
+                is_end_episode INTEGER DEFAULT 0
             )
         ''')
+        try:
+            conn.execute('ALTER TABLE episodes ADD COLUMN is_end_episode INTEGER DEFAULT 0')
+        except sqlite3.OperationalError: pass
 
 def get_high_quality_poster(url):
     if not url: return ""
@@ -180,15 +184,103 @@ def toggle_watched(ep_id):
 def set_end_ep(ep_id):
     with get_db() as conn:
         cur = conn.cursor()
-        ep = cur.execute('SELECT target_id FROM episodes WHERE id = ?', (ep_id,)).fetchone()
+        ep = cur.execute('SELECT target_id, show_id, show_title, is_end_episode FROM episodes WHERE id = ?', (ep_id,)).fetchone()
         if ep:
             target_id = ep['target_id']
-            target = cur.execute('SELECT calc_end_episode_id FROM targets WHERE id = ?', (target_id,)).fetchone()
-            new_end_id = None if target['calc_end_episode_id'] == ep_id else ep_id
-            cur.execute('UPDATE targets SET calc_end_episode_id = ? WHERE id = ?', (new_end_id, target_id))
+            show_id = ep['show_id']
+            show_title = ep['show_title']
+            currently_is_end = ep['is_end_episode']
+
+            cur.execute('UPDATE episodes SET is_end_episode = 0 WHERE target_id = ? AND show_id = ?', (target_id, show_id))
+            if not currently_is_end:
+                cur.execute('UPDATE episodes SET is_end_episode = 1 WHERE id = ?', (ep_id,))
+
             conn.commit()
-            return jsonify({'success': True, 'target_id': target_id})
+            stats = calculate_target_stats(target_id, conn)
+            return jsonify({
+                'success': True,
+                'target_id': target_id,
+                'ep_id': ep_id,
+                'show_title': show_title,
+                'stats': stats
+            })
     return jsonify({'success': False})
+
+@app.route('/refresh/<int:target_id>', methods=['POST'])
+def refresh_target(target_id):
+    with get_db() as conn:
+        cur = conn.cursor()
+        
+        # Get unique show_ids for this target based on existing episodes
+        show_ids_rows = cur.execute('SELECT DISTINCT show_id FROM episodes WHERE target_id = ? ORDER BY id', (target_id,)).fetchall()
+        if not show_ids_rows:
+            return jsonify({'success': False})
+            
+        show_ids = [row['show_id'] for row in show_ids_rows]
+        
+        # Update the target properties using the first show id
+        first_show_id = show_ids[0]
+        try:
+            res = requests.get(f"https://api.imdbapi.dev/titles/{first_show_id}")
+            if res.status_code == 200:
+                data = res.json()
+                target_name = data.get('primaryTitle')
+                if 'primaryImage' in data and data['primaryImage']:
+                    poster_url = get_high_quality_poster(data['primaryImage'].get('url'))
+                    if target_name and poster_url:
+                        cur.execute('UPDATE targets SET name = ?, poster_url = ? WHERE id = ?', (target_name, poster_url, target_id))
+        except Exception as e:
+            print(f"Error fetching target info during refresh: {e}")
+            
+        # Fetch new episodes for all shows
+        for show_id in show_ids:
+            try:
+                res = requests.get(f"https://api.imdbapi.dev/titles/{show_id}")
+                show_title = f"Show {show_id}"
+                if res.status_code == 200:
+                    show_title = res.json().get('primaryTitle', show_title)
+            except: pass
+                
+            page_token = None
+            while True:
+                url = f"https://api.imdbapi.dev/titles/{show_id}/episodes?pageSize=50"
+                if page_token: url += f"&pageToken={page_token}"
+                    
+                try:
+                    res = requests.get(url)
+                    if res.status_code != 200: break
+                    data = res.json()
+                    eps = data.get('episodes', data) if isinstance(data, dict) else data
+                    if not eps: break
+                    
+                    for ep in eps:
+                        try:
+                            s = int(ep.get('season', 0))
+                            e = int(ep.get('episodeNumber', 0))
+                        except: continue
+                            
+                        existing_ep = cur.execute('SELECT id FROM episodes WHERE target_id = ? AND show_id = ? AND season = ? AND episode = ?', (target_id, show_id, s, e)).fetchone()
+                        
+                        title = ep.get('title', 'Unknown')
+                        runtime_sec = ep.get('runtimeSeconds') or 0
+                        runtime_min = runtime_sec // 60
+                        
+                        if existing_ep:
+                            cur.execute('UPDATE episodes SET title = ?, runtime_minutes = ? WHERE id = ?', (title, runtime_min, existing_ep['id']))
+                        else:
+                            cur.execute('''
+                                INSERT INTO episodes (target_id, show_id, show_title, season, episode, title, runtime_minutes)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                            ''', (target_id, show_id, show_title, s, e, title, runtime_min))
+                        
+                    page_token = data.get('nextPageToken')
+                    if not page_token: break
+                except Exception as e:
+                    print(f"Error fetching episodes during refresh: {e}")
+                    break
+                    
+        conn.commit()
+        return jsonify({'success': True})
 
 @app.route('/delete/<int:target_id>', methods=['POST'])
 def delete_target(target_id):
@@ -223,14 +315,25 @@ def move_target(target_id, direction):
     return jsonify({'success': False})
 
 def calculate_target_stats(target_id, conn):
-    target = conn.execute('SELECT end_date, calc_end_episode_id FROM targets WHERE id = ?', (target_id,)).fetchone()
-    end_ep_id = target['calc_end_episode_id'] if target else None
-    if end_ep_id:
-        episodes = conn.execute('SELECT runtime_minutes, watched FROM episodes WHERE target_id = ? AND id <= ?', (target_id, end_ep_id)).fetchall()
-    else:
-        episodes = conn.execute('SELECT runtime_minutes, watched FROM episodes WHERE target_id = ?', (target_id,)).fetchall()
-    total_min = sum(ep['runtime_minutes'] for ep in episodes)
-    watched_min = sum(ep['runtime_minutes'] for ep in episodes if ep['watched'])
+    target = conn.execute('SELECT end_date FROM targets WHERE id = ?', (target_id,)).fetchone()
+    
+    episodes = conn.execute('SELECT id, show_title, show_id, runtime_minutes, watched, is_end_episode FROM episodes WHERE target_id = ? ORDER BY id', (target_id,)).fetchall()
+    
+    end_eps_by_show = {}
+    end_eps_by_show_id = {}
+    for ep in episodes:
+        if ep['is_end_episode']:
+            end_eps_by_show[ep['show_title']] = ep['id']
+            end_eps_by_show_id[ep['show_id']] = ep['id']
+            
+    valid_episodes = []
+    for ep in episodes:
+        show_end_id = end_eps_by_show_id.get(ep['show_id'])
+        if not show_end_id or ep['id'] <= show_end_id:
+            valid_episodes.append(ep)
+            
+    total_min = sum(ep['runtime_minutes'] for ep in valid_episodes)
+    watched_min = sum(ep['runtime_minutes'] for ep in valid_episodes if ep['watched'])
     remaining_min = total_min - watched_min
     progress = (watched_min / total_min * 100) if total_min > 0 else 0
     stats_text = f"Total: {total_min} min | Watched: {watched_min} min | Remaining: {remaining_min} min"
@@ -246,7 +349,7 @@ def calculate_target_stats(target_id, conn):
         'progress_percent': round(progress, 2),
         'text': stats_text,
         'daily_mins': min_per_day,
-        'end_ep_id': end_ep_id
+        'end_eps_by_show': end_eps_by_show
     }
 
 HTML_TEMPLATE = """
@@ -273,7 +376,6 @@ HTML_TEMPLATE = """
             background: #000;
             display: flex; flex-direction: column; align-items: center;
             min-height: 100vh;
-            transition: background 0.5s ease;
         }
 
         .banner-container { width: var(--banner-width); margin-bottom: 40px; box-sizing: border-box; }
@@ -419,7 +521,11 @@ HTML_TEMPLATE = """
             event.preventDefault();
             fetch('/set_end/' + epId, { method: 'POST' })
             .then(res => res.json())
-            .then(data => { if(data.success) window.location.reload(); });
+            .then(data => {
+                if(data.success) {
+                    updateEndEpisode(data.target_id, data.ep_id, data.show_title, data.stats);
+                }
+            });
         }
         function deleteTarget(targetId) {
             if(confirm("Delete this Binge Target?")) {
@@ -434,19 +540,41 @@ HTML_TEMPLATE = """
                 });
             }
         }
+        function refreshTarget(targetId) {
+            const btn = document.querySelector('#card-' + targetId + ' .action-group .btn:first-child');
+            if(!btn) return;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '...';
+            btn.disabled = true;
+            fetch('/refresh/' + targetId, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => { 
+                if(data.success) {
+                    window.location.reload();
+                } else {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    alert('Refresh failed');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                alert('Error refreshing');
+            });
+        }
         function moveTarget(targetId, direction) {
             const currentCard = document.getElementById('card-' + targetId);
             if (!currentCard) return;
             
             const sibling = direction === 'up' ? currentCard.previousElementSibling : currentCard.nextElementSibling;
             
-            // Proceed with animation only if the sibling is another target card
             if (sibling && sibling.classList.contains('target-card')) {
                 const currentRect = currentCard.getBoundingClientRect();
                 const siblingRect = sibling.getBoundingClientRect();
                 const dy = siblingRect.top - currentRect.top;
 
-                // Prepare for animation
                 currentCard.style.transition = 'transform 0.4s ease-in-out, box-shadow 0.4s ease-in-out';
                 currentCard.style.zIndex = '100';
                 currentCard.style.position = 'relative';
@@ -454,21 +582,35 @@ HTML_TEMPLATE = """
                 sibling.style.transition = 'transform 0.4s ease-in-out';
                 sibling.style.position = 'relative';
 
-                // Trigger animation
                 requestAnimationFrame(() => {
                     currentCard.style.transform = `translateY(${dy}px) scale(1.02)`;
                     currentCard.style.boxShadow = '0 25px 50px rgba(0,0,0,0.6)';
                     sibling.style.transform = `translateY(${-dy}px)`;
                 });
 
-                // Wait for animation, then backend call
                 setTimeout(() => {
-                    fetch('/move/' + targetId + '/' + direction, { method: 'POST' })
-                    .then(res => res.json())
-                    .then(data => { if(data.success) window.location.reload(); });
+                    // Reset styles
+                    currentCard.style.transition = '';
+                    currentCard.style.transform = '';
+                    currentCard.style.boxShadow = '';
+                    currentCard.style.zIndex = '';
+                    currentCard.style.position = '';
+                    
+                    sibling.style.transition = '';
+                    sibling.style.transform = '';
+                    sibling.style.position = '';
+
+                    // Swap in DOM
+                    if (direction === 'up') {
+                        sibling.parentNode.insertBefore(currentCard, sibling);
+                    } else {
+                        sibling.parentNode.insertBefore(sibling, currentCard);
+                    }
+
+                    // Update backend silently
+                    fetch('/move/' + targetId + '/' + direction, { method: 'POST' });
                 }, 400);
             } else {
-                // Fallback if no valid sibling
                 fetch('/move/' + targetId + '/' + direction, { method: 'POST' })
                 .then(res => res.json())
                 .then(data => { if(data.success) window.location.reload(); });
@@ -486,6 +628,41 @@ HTML_TEMPLATE = """
                 if (stats.daily_mins != null) daily.innerHTML = '<div class="daily-num">' + stats.daily_mins + '</div><div class="daily-label">mins/day</div>';
                 else daily.innerHTML = '<div class="daily-label">No Goal Date</div>';
             }
+        }
+        function updateEndEpisode(targetId, newEndEpId, showTitle, stats) {
+            const card = document.getElementById('card-' + targetId);
+            if(!card) return;
+
+            // Find the show section by matching the show title
+            const newEndBox = card.querySelector('.ep-box[onclick*="' + newEndEpId + '"]');
+            if(!newEndBox) return;
+
+            // Get the show section containing this episode
+            const showSection = newEndBox.closest('.show-section');
+            if(showSection) {
+                // Remove end-ep class from all episodes in this show
+                showSection.querySelectorAll('.ep-box.end-ep').forEach(box => box.classList.remove('end-ep'));
+            }
+
+            // Add end-ep class to new end episode
+            newEndBox.classList.add('end-ep');
+
+            // Update dimmed state only for episodes after the end point within the same show
+            if(showSection) {
+                // Get all ep-boxes in this show section in order
+                const allEpsInShow = Array.from(showSection.querySelectorAll('.ep-box'));
+                const endIndex = allEpsInShow.indexOf(newEndBox);
+                allEpsInShow.forEach((box, idx) => {
+                    if(idx > endIndex) {
+                        box.classList.add('dimmed');
+                    } else {
+                        box.classList.remove('dimmed');
+                    }
+                });
+            }
+
+            // Update stats
+            updateStats(targetId, stats);
         }
     </script>
 </head>
@@ -519,6 +696,7 @@ HTML_TEMPLATE = """
                 <div class="target-title-bar">
                     <h2>{{ target.name }}</h2>
                     <div class="action-group">
+                        <button class="btn" onclick="refreshTarget({{ target.id }})" title="Refresh Data">↻</button>
                         <button class="btn" onclick="moveTarget({{ target.id }}, 'up')" title="Move Up">▲</button>
                         <button class="btn" onclick="moveTarget({{ target.id }}, 'down')" title="Move Down">▼</button>
                         <button class="btn delete-btn" onclick="deleteTarget({{ target.id }})" title="Delete Target">Delete</button>
@@ -527,21 +705,22 @@ HTML_TEMPLATE = """
                 <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.4); font-size: 14px;">Right-click an episode to set binge end point.</p>
                 
                 <div class="show-list-container">
-                    {% set is_after_end = namespace(value=false) %}
                     {% for show_title, seasons in target.shows.items() %}
                     <div class="show-section">
                         <div class="show-title">{{ show_title }}</div>
+                        {% set show_end_ep_id = target.stats.end_eps_by_show.get(show_title) %}
+                        {% set is_after_end = namespace(value=false) %}
                         {% for season_num, eps in seasons.items() %}
                         <div class="season-row">
                             <div class="season-label">Season {{ season_num }}</div>
                             <div class="ep-wrapper">
                                 {% for ep in eps %}
-                                    {% if target.stats.end_ep_id and ep.id > target.stats.end_ep_id %}
+                                    {% if show_end_ep_id and ep.id > show_end_ep_id %}
                                         {% set is_after_end.value = true %}
                                     {% else %}
                                         {% set is_after_end.value = false %}
                                     {% endif %}
-                                    <div class="ep-box {% if ep.watched %}watched{% endif %} {% if target.stats.end_ep_id == ep.id %}end-ep{% endif %} {% if is_after_end.value %}dimmed{% endif %}" 
+                                    <div class="ep-box {% if ep.watched %}watched{% endif %} {% if show_end_ep_id == ep.id %}end-ep{% endif %} {% if is_after_end.value %}dimmed{% endif %}" 
                                          onclick="toggleEp({{ ep.id }}, this)"
                                          oncontextmenu="setEndEp(event, {{ ep.id }})"
                                          data-tooltip="Ep {{ ep.episode }}: {{ ep.title }} ({{ ep.runtime_minutes }}m)">
@@ -586,7 +765,7 @@ HTML_TEMPLATE = """
     </div>
     {% endfor %}
 
-    <div class="form-banner glass-panel">
+    <div class="form-banner glass-panel" style="order: 9999;">
         <h2>Add New Binge Goal</h2>
         <form method="POST">
             <label>IMDB Title IDs (e.g. tt3322312, tt18923754)</label>
