@@ -10,6 +10,7 @@ A high-performance, single-page web application for tracking binge-watching prog
 - **Reorder Targets**: Move targets up/down with animated visual swap effect.
 - **Compact UI**: Action bar with inline stats (mins/day, deadline) for efficient screen space usage.
 - **Glassmorphism UI**: Neutral, translucent interface optimized for high-resolution (4K) monitors.
+- **Mobile Responsive**: Responsive layout with breakpoints at 768px and 400px, long-press support for touch devices.
 - **Background Customization**: Built-in background selector (Dark Black, Space Grey, Dynamic Blue, Shadow Gradient, Deep Purple).
 - **Persistent Storage**: SQLite database integration with volume support for Docker.
 
@@ -44,7 +45,7 @@ Your data will be persisted in the `./data` directory on your host machine.
 ## Usage
 1. **Add a target**: Enter IMDB title IDs (e.g., `tt3322312, tt18923754`) and optional end date
 2. **Mark episodes watched**: Left-click on episode boxes
-3. **Set end point**: Right-click an episode to set the binge endpoint for that show
+3. **Set end point**: Right-click (or long-press on mobile) an episode to set the binge endpoint for that show
 4. **Refresh**: Click ↻ to fetch new episodes or update metadata
 5. **Reorder**: Use ▲/▼ buttons to move targets up/down
 6. **Delete**: Remove a target entirely

@@ -62,6 +62,8 @@ Data persists in `./data` directory on host.
 - Animated move up/down with visual swap effect
 - Per-show end point tracking (right-click sets end episode per show within target)
 - AJAX updates via `fetch()` for toggle/set_end/delete/refresh/move endpoints
+- Mobile responsive design with breakpoints at 768px and 400px
+- Long-press (500ms) on episodes to set end point on touch devices
 
 ## API Endpoints
 

@@ -357,6 +357,7 @@ HTML_TEMPLATE = """
 <html>
 <head>
     <title>Binge Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
         /* Refined Glass Theme */
         :root {
@@ -502,6 +503,7 @@ HTML_TEMPLATE = """
             border: 1px solid rgba(255,255,255,0.04);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none; position: relative;
+            touch-action: manipulation;
         }
         .ep-box:hover {
             background: rgba(255,255,255,0.12);
@@ -687,6 +689,240 @@ HTML_TEMPLATE = """
             color: #fff;
             padding-left: 24px;
         }
+
+        /* ===== Mobile Responsive ===== */
+        @media (max-width: 768px) {
+            :root {
+                --banner-width: 100vw;
+            }
+
+            body {
+                padding: 40px 0;
+            }
+
+            .banner-container {
+                width: 100vw;
+                margin-bottom: 24px;
+            }
+
+            .title-banner {
+                padding: 28px 20px;
+            }
+            .title-banner h1 {
+                font-size: 32px;
+                letter-spacing: -1px;
+            }
+
+            /* Target card: full width, less padding */
+            .target-card {
+                width: 100vw;
+                padding: 20px;
+                margin-bottom: 24px;
+            }
+
+            /* Stack poster above info instead of side-by-side */
+            .target-header {
+                flex-direction: column;
+                height: auto;
+                gap: 20px;
+            }
+            .target-poster {
+                width: calc(100% - 24px);
+                margin: 0 auto;
+                aspect-ratio: 2/3;
+                border-radius: 16px;
+                object-fit: cover;
+            }
+            .target-info {
+                padding-top: 0;
+            }
+
+            /* Title bar: stack title and actions vertically */
+            .target-title-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 12px;
+            }
+            .target-info h2 {
+                font-size: 22px;
+            }
+
+            /* Action group: wrap, smaller gap */
+            .action-group {
+                flex-wrap: wrap;
+                gap: 8px;
+                width: 100%;
+            }
+            .btn {
+                line-height: 38px;
+                height: 38px;
+                padding: 0 14px;
+                font-size: 12px;
+            }
+
+            /* Inline stats: wrap on small screens */
+            .stats-inline-panel {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .stats-box {
+                height: 34px;
+                font-size: 12px;
+                line-height: 34px;
+                padding: 0 12px;
+            }
+            .stats-box .num { font-size: 12px; }
+            .stats-box .label { font-size: 10px; }
+
+            /* Show list: remove right padding scrollbar area */
+            .show-list-container {
+                padding-right: 0;
+                overflow-y: visible;
+                max-height: none;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .show-title {
+                font-size: 14px;
+                margin-top: 16px;
+                margin-bottom: 10px;
+            }
+
+            /* Season rows: stack label on top of episodes */
+            .season-row {
+                flex-direction: column;
+                margin-bottom: 14px;
+            }
+            .season-label {
+                width: auto;
+                padding-top: 0;
+                margin-bottom: 6px;
+                font-size: 12px;
+            }
+
+            /* Episode boxes: slightly smaller for mobile */
+            .ep-box {
+                width: 30px;
+                height: 30px;
+                font-size: 11px;
+                border-radius: 8px;
+            }
+            .ep-wrapper {
+                gap: 6px;
+            }
+
+            /* Progress area */
+            .progress-wrapper {
+                margin-top: 20px;
+            }
+            .progress-container {
+                height: 28px;
+                border-radius: 14px;
+            }
+            .progress-text-overlay {
+                line-height: 28px;
+                font-size: 12px;
+            }
+            .stats-text {
+                font-size: 12px;
+                margin-top: 10px;
+            }
+
+            /* Stats blocks */
+            .glass-box {
+                padding: 20px;
+                min-width: 100px;
+                border-radius: 18px;
+            }
+            .daily-num {
+                font-size: 30px;
+            }
+            .stats-right-panel {
+                gap: 10px;
+            }
+
+            /* Form */
+            .form-banner {
+                width: 100vw;
+                padding: 24px 20px;
+                margin-top: 24px;
+            }
+            .form-banner h2 {
+                font-size: 20px;
+                margin-bottom: 20px;
+            }
+            .form-banner input {
+                padding: 14px 16px;
+                font-size: 16px; /* prevents iOS zoom */
+                border-radius: 12px;
+            }
+            .form-banner button {
+                padding: 16px 24px;
+                font-size: 15px;
+                border-radius: 12px;
+            }
+
+            /* Settings button: smaller, repositioned */
+            .settings-btn {
+                top: 16px;
+                right: 16px;
+                width: 40px;
+                height: 40px;
+            }
+
+            /* Background menu: repositioned */
+            .bg-menu {
+                top: 66px;
+                right: 16px;
+                border-radius: 14px;
+                padding: 8px;
+            }
+            .bg-option {
+                padding: 10px 16px;
+                font-size: 12px;
+            }
+
+            /* Tooltip: better mobile positioning */
+            #global-tooltip {
+                font-size: 12px;
+                padding: 8px 12px;
+                border-radius: 10px;
+            }
+
+            /* Right-click hint: adjust for touch */
+            .right-click-hint {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .title-banner h1 {
+                font-size: 26px;
+            }
+            .target-card {
+                padding: 16px;
+            }
+            .target-info h2 {
+                font-size: 18px;
+            }
+            .btn {
+                line-height: 34px;
+                height: 34px;
+                padding: 0 10px;
+                font-size: 11px;
+                border-radius: 10px;
+            }
+            .ep-box {
+                width: 28px;
+                height: 28px;
+                font-size: 10px;
+                border-radius: 7px;
+            }
+            .ep-wrapper {
+                gap: 5px;
+            }
+        }
     </style>
     <script>
         function setBg(bgStyle) { document.body.style.background = bgStyle; localStorage.setItem('bingeBg', bgStyle); }
@@ -705,6 +941,29 @@ HTML_TEMPLATE = """
                 });
                 box.addEventListener('mouseleave', () => {
                     tooltip.classList.remove('show');
+                });
+            });
+
+            // Mobile long-press support for setting end episode
+            let longPressTimer = null;
+            let longPressTarget = null;
+            document.querySelectorAll('.ep-box').forEach(box => {
+                box.addEventListener('touchstart', (e) => {
+                    longPressTarget = box;
+                    longPressTimer = setTimeout(() => {
+                        e.preventDefault();
+                        const epId = box.getAttribute('onclick').match(/toggleEp[(](\\d+)/)[1];
+                        setEndEp(e, parseInt(epId));
+                        longPressTarget = null;
+                    }, 500);
+                }, { passive: false });
+                box.addEventListener('touchend', () => {
+                    clearTimeout(longPressTimer);
+                    longPressTarget = null;
+                });
+                box.addEventListener('touchmove', () => {
+                    clearTimeout(longPressTimer);
+                    longPressTarget = null;
                 });
             });
         }
@@ -922,7 +1181,7 @@ HTML_TEMPLATE = """
                         </div>
                     </div>
                 </div>
-                <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.4); font-size: 14px;">Right-click an episode to set binge end point.</p>
+                <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.4); font-size: 14px;">Right-click or long-press an episode to set binge end point.</p>
 
                 <div class="show-list-container">
                     {% for show_title, seasons in target.shows.items() %}
