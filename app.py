@@ -202,7 +202,8 @@ def set_end_ep(ep_id):
                 'target_id': target_id,
                 'ep_id': ep_id,
                 'show_title': show_title,
-                'stats': stats
+                'stats': stats,
+                'is_end': not currently_is_end
             })
     return jsonify({'success': False})
 

@@ -59,7 +59,7 @@ function setBg(bgStyle) { document.body.style.background = bgStyle; localStorage
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
-                    updateEndEpisode(data.target_id, data.ep_id, data.show_title, data.stats);
+                    updateEndEpisode(data.target_id, data.ep_id, data.show_title, data.stats, data.is_end);
                 }
             });
         }
@@ -165,7 +165,7 @@ function setBg(bgStyle) { document.body.style.background = bgStyle; localStorage
                 else daily.innerHTML = '<span class="label">No Goal</span>';
             }
         }
-        function updateEndEpisode(targetId, newEndEpId, showTitle, stats) {
+        function updateEndEpisode(targetId, newEndEpId, showTitle, stats, isEnd) {
             const card = document.getElementById('card-' + targetId);
             if(!card) return;
 
@@ -180,14 +180,17 @@ function setBg(bgStyle) { document.body.style.background = bgStyle; localStorage
                 showSection.querySelectorAll('.ep-box.end-ep').forEach(box => box.classList.remove('end-ep'));
             }
 
-            // Add end-ep class to new end episode
-            newEndBox.classList.add('end-ep');
+            if(isEnd) {
+                // Add end-ep class to new end episode
+                newEndBox.classList.add('end-ep');
+            }
 
             // Update dimmed state only for episodes after the end point within the same show
             if(showSection) {
                 // Get all ep-boxes in this show section in order
                 const allEpsInShow = Array.from(showSection.querySelectorAll('.ep-box'));
-                const endIndex = allEpsInShow.indexOf(newEndBox);
+                let endIndex = isEnd ? allEpsInShow.indexOf(newEndBox) : allEpsInShow.length;
+                
                 allEpsInShow.forEach((box, idx) => {
                     if(idx > endIndex) {
                         box.classList.add('dimmed');
