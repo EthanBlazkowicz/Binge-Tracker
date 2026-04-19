@@ -1,6 +1,6 @@
 # Binge Tracker
 
-A high-performance, single-page web application for tracking binge-watching progress across multiple IMDB titles. Featuring a modern iOS-inspired "Glassmorphism" interface optimized for 4K displays.
+A high-performance web application for tracking binge-watching progress across multiple IMDB titles. Featuring a sleek, high-contrast cinematic dark theme optimized for 4K displays.
 
 ## Features
 - **Multi-Show Targets**: Import multiple IMDB titles (e.g., a series and its spin-offs) into a single "Binge Target".
@@ -9,7 +9,7 @@ A high-performance, single-page web application for tracking binge-watching prog
 - **Goal Calculation**: Set a "Target End Date" to calculate exactly how many minutes per day you need to watch.
 - **Reorder Targets**: Move targets up/down with animated visual swap effect.
 - **Compact UI**: Action bar with inline stats (mins/day, deadline) for efficient screen space usage.
-- **Glassmorphism UI**: Neutral, translucent interface optimized for high-resolution (4K) monitors.
+- **Cinematic UI**: Sleek, dark, high-contrast interface with fluid scroll-triggered animations.
 - **Mobile Responsive**: Responsive layout with breakpoints at 768px and 400px, long-press support for touch devices.
 - **Background Customization**: Built-in background selector (Dark Black, Space Grey, Dynamic Blue, Shadow Gradient, Deep Purple).
 - **Persistent Storage**: SQLite database integration with volume support for Docker.
@@ -48,4 +48,6 @@ Your data will be persisted in the `./data` directory on your host machine.
 3. **Set end point**: Right-click (or long-press on mobile) an episode to set the binge endpoint for that show
 4. **Refresh**: Click ↻ to fetch new episodes or update metadata
 5. **Reorder**: Use ▲/▼ buttons to move targets up/down
+6. **Delete**: Remove a target entirely
+ns to move targets up/down
 6. **Delete**: Remove a target entirely

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Binge Tracker is a single-page Flask web application for tracking binge-watching progress across multiple IMDB titles. The entire application is contained in `app.py` with embedded HTML/CSS/JS templates.
+Binge Tracker is a Flask web application for tracking binge-watching progress across multiple IMDB titles. It uses a standard Flask directory structure separating backend routes, HTML templates, and static assets.
 
 ## Running the Application
 
@@ -25,9 +25,10 @@ Data persists in `./data` directory on host.
 
 ## Architecture
 
-**Single-file Flask application** (`app.py`):
-- Backend logic and HTML template are combined in one file
-- `HTML_TEMPLATE` constant contains the entire frontend (HTML/CSS/JS)
+**Standard Flask architecture**:
+- `app.py` contains all backend logic and API routes
+- `templates/index.html` holds the frontend HTML
+- `static/css/style.css` and `static/js/script.js` hold the separated assets
 - SQLite database stored in `./data/binge.db`
 
 **Database schema:**
@@ -56,7 +57,7 @@ Data persists in `./data` directory on host.
 
 **Frontend structure:**
 - Vanilla JS with inline event handlers
-- Glassmorphism CSS using CSS variables in `:root`
+- High-contrast cinematic dark theme with sharp borders and fluid scroll reveal animations
 - Compact action bar with buttons and inline stats (mins/day, deadline)
 - Background customization stored in localStorage (`bingeBg` key)
 - Animated move up/down with visual swap effect

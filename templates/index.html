@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Binge Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</head>
+<body>
+    <div id="global-tooltip"></div>
+
+    <div class="settings-btn" onclick="toggleMenu()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </div>
+
+    <div class="bg-menu" id="bgMenu">
+        <div class="bg-option" onclick="setBg('#000')">Dark Black</div>
+        <div class="bg-option" onclick="setBg('#1c1c1e')">Space Grey</div>
+        <div class="bg-option" onclick="setBg('linear-gradient(135deg, #a8c0ff 0%, #3f2b96 100%)')">Dynamic Blue</div>
+        <div class="bg-option" onclick="setBg('linear-gradient(135deg, #2c3e50 0%, #000 100%)')">Shadow Gradient</div>
+        <div class="bg-option" onclick="setBg('linear-gradient(135deg, #667eea 0%, #764ba2 100%)')">Deep Purple</div>
+    </div>
+
+    <div class="banner-container glass-panel title-banner">
+        <h1>Binge Tracker</h1>
+    </div>
+
+    {% for target in targets %}
+    <div class="target-card glass-panel" id="card-{{ target.id }}">
+        <div class="target-header">
+            {% if target.poster_url %}
+            <img src="{{ target.poster_url }}" class="target-poster" alt="Poster">
+            {% endif %}
+            
+            <div class="target-info">
+                <div class="target-title-bar">
+                    <h2>{{ target.name }}</h2>
+                    <div class="action-group">
+                        <button class="btn" onclick="refreshTarget({{ target.id }})" title="Refresh Data">↻</button>
+                        <button class="btn" onclick="moveTarget({{ target.id }}, 'up')" title="Move Up">▲</button>
+                        <button class="btn" onclick="moveTarget({{ target.id }}, 'down')" title="Move Down">▼</button>
+                        <button class="btn delete-btn" onclick="deleteTarget({{ target.id }})" title="Delete Target">Delete</button>
+
+                        <div class="stats-inline-panel">
+                            <div class="stats-box" id="daily-{{ target.id }}">
+                                {% if target.stats.daily_mins != null %}
+                                    <span class="num">{{ target.stats.daily_mins }}</span><span class="label">min/day</span>
+                                {% else %}
+                                    <span class="label">No Goal</span>
+                                {% endif %}
+                            </div>
+
+                            {% if target.end_date %}
+                            <div class="stats-box" style="background: rgba(255,255,255,0.05);">
+                                <span class="num">{{ target.end_date[5:] }}</span><span class="label" style="color: var(--primary-blue);">deadline</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <p style="margin: 0 0 20px 0; color: rgba(255,255,255,0.4); font-size: 14px;">Right-click or long-press an episode to set binge end point.</p>
+
+                <div class="show-list-container">
+                    {% for show_title, seasons in target.shows.items() %}
+                    <div class="show-section">
+                        <div class="show-title">{{ show_title }}</div>
+                        {% set show_end_ep_id = target.stats.end_eps_by_show.get(show_title) %}
+                        {% set is_after_end = namespace(value=false) %}
+                        {% for season_num, eps in seasons.items() %}
+                        <div class="season-row">
+                            <div class="season-label">Season {{ season_num }}</div>
+                            <div class="ep-wrapper">
+                                {% for ep in eps %}
+                                    {% if show_end_ep_id and ep.id > show_end_ep_id %}
+                                        {% set is_after_end.value = true %}
+                                    {% else %}
+                                        {% set is_after_end.value = false %}
+                                    {% endif %}
+                                    <div class="ep-box {% if ep.watched %}watched{% endif %} {% if show_end_ep_id == ep.id %}end-ep{% endif %} {% if is_after_end.value %}dimmed{% endif %}" 
+                                         onclick="toggleEp({{ ep.id }}, this)"
+                                         oncontextmenu="setEndEp(event, {{ ep.id }})"
+                                         data-tooltip="Ep {{ ep.episode }}: {{ ep.title }} ({{ ep.runtime_minutes }}m)">
+                                        {{ ep.episode }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-wrapper">
+            <div class="progress-container">
+                <div class="progress-bar" id="bar-{{ target.id }}" style="width: {{ target.stats.progress_percent }}%;"></div>
+                <div class="progress-text-overlay" id="overlay-{{ target.id }}">{{ target.stats.progress_percent }}%</div>
+            </div>
+            <div class="stats-text" id="stats-{{ target.id }}">{{ target.stats.text }}</div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="form-banner glass-panel" style="order: 9999;">
+        <h2>Add New Binge Goal</h2>
+        <form method="POST">
+            <label>IMDB Title IDs (e.g. tt3322312, tt18923754)</label>
+            <input type="text" name="title_ids" placeholder="tt1234567, tt7654321" required>
+            <label>Target End Date</label>
+            <input type="date" name="end_date">
+            <button type="submit">Create Binge Target</button>
+        </form>
+    </div>
+
+</body>
+</html>
